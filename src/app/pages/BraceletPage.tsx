@@ -11,6 +11,146 @@ import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { SensorReadingBar } from '../components/SensorReadingBar';
 
+type NumericSensorKey =
+  | 'heartRate'
+  | 'bloodOxygen'
+  | 'temperature'
+  | 'respiratoryRate'
+  | 'systolicPressure'
+  | 'diastolicPressure';
+
+const SENSOR_CONFIGS: Array<{
+  key: NumericSensorKey;
+  label: string;
+  unit: string;
+  min: number;
+  max: number;
+  normalVariance: number;
+  warningPositive: number;
+  warningNegative: number;
+  criticalPositive: number;
+  criticalNegative: number;
+  lowDelta: number;
+  highDelta: number;
+  criticalLowDelta: number;
+  criticalHighDelta: number;
+  parse: (value: string) => number;
+  format: (value: number) => number;
+}> = [
+  {
+    key: 'heartRate',
+    label: 'Heart Rate',
+    unit: 'bpm',
+    min: 30,
+    max: 200,
+    normalVariance: 5,
+    warningPositive: 20,
+    warningNegative: 15,
+    criticalPositive: 40,
+    criticalNegative: 30,
+    lowDelta: 10,
+    highDelta: 10,
+    criticalLowDelta: 25,
+    criticalHighDelta: 35,
+    parse: (value) => parseInt(value, 10),
+    format: (value) => Math.round(value),
+  },
+  {
+    key: 'bloodOxygen',
+    label: 'Blood Oxygen',
+    unit: '%',
+    min: 70,
+    max: 100,
+    normalVariance: 2,
+    warningPositive: 2,
+    warningNegative: 5,
+    criticalPositive: 0,
+    criticalNegative: 10,
+    lowDelta: 3,
+    highDelta: 2,
+    criticalLowDelta: 8,
+    criticalHighDelta: 0,
+    parse: (value) => parseInt(value, 10),
+    format: (value) => Math.round(value),
+  },
+  {
+    key: 'temperature',
+    label: 'Body Temperature',
+    unit: '°F',
+    min: 95,
+    max: 105,
+    normalVariance: 0.5,
+    warningPositive: 2,
+    warningNegative: 1.5,
+    criticalPositive: 3.5,
+    criticalNegative: 2.5,
+    lowDelta: 1,
+    highDelta: 1.5,
+    criticalLowDelta: 2,
+    criticalHighDelta: 3,
+    parse: (value) => parseFloat(value),
+    format: (value) => parseFloat(value.toFixed(1)),
+  },
+  {
+    key: 'respiratoryRate',
+    label: 'Respiratory Rate',
+    unit: 'breaths/min',
+    min: 6,
+    max: 40,
+    normalVariance: 2,
+    warningPositive: 4,
+    warningNegative: 3,
+    criticalPositive: 8,
+    criticalNegative: 6,
+    lowDelta: 2,
+    highDelta: 3,
+    criticalLowDelta: 5,
+    criticalHighDelta: 6,
+    parse: (value) => parseInt(value, 10),
+    format: (value) => Math.round(value),
+  },
+  {
+    key: 'systolicPressure',
+    label: 'Systolic Pressure',
+    unit: 'mmHg',
+    min: 70,
+    max: 220,
+    normalVariance: 5,
+    warningPositive: 15,
+    warningNegative: 10,
+    criticalPositive: 30,
+    criticalNegative: 20,
+    lowDelta: 10,
+    highDelta: 10,
+    criticalLowDelta: 20,
+    criticalHighDelta: 25,
+    parse: (value) => parseInt(value, 10),
+    format: (value) => Math.round(value),
+  },
+  {
+    key: 'diastolicPressure',
+    label: 'Diastolic Pressure',
+    unit: 'mmHg',
+    min: 40,
+    max: 140,
+    normalVariance: 4,
+    warningPositive: 10,
+    warningNegative: 8,
+    criticalPositive: 20,
+    criticalNegative: 15,
+    lowDelta: 8,
+    highDelta: 8,
+    criticalLowDelta: 15,
+    criticalHighDelta: 18,
+    parse: (value) => parseInt(value, 10),
+    format: (value) => Math.round(value),
+  },
+];
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export function BraceletPage() {
   const { user, medicalRecords, emergencyContacts, sensorData } = useAuth();
   const navigate = useNavigate();
@@ -21,19 +161,22 @@ export function BraceletPage() {
     heartRate: 0,
     bloodOxygen: 0,
     temperature: 0,
+    respiratoryRate: 0,
+    systolicPressure: 0,
+    diastolicPressure: 0,
   });
   const pairingStorageKey = user ? `medBracelet_pairingCode_${user.id}` : null;
 
   // Simulate live sensor readings based on average values
   useEffect(() => {
-    if (sensorData.heartRate && sensorData.bloodOxygen && sensorData.temperature) {
-      // Start with values close to average
-      setSimulatedReadings({
-        heartRate: parseInt(sensorData.heartRate),
-        bloodOxygen: parseInt(sensorData.bloodOxygen),
-        temperature: parseFloat(sensorData.temperature),
-      });
-    }
+    setSimulatedReadings({
+      heartRate: sensorData.heartRate ? parseInt(sensorData.heartRate, 10) : 0,
+      bloodOxygen: sensorData.bloodOxygen ? parseInt(sensorData.bloodOxygen, 10) : 0,
+      temperature: sensorData.temperature ? parseFloat(sensorData.temperature) : 0,
+      respiratoryRate: sensorData.respiratoryRate ? parseInt(sensorData.respiratoryRate, 10) : 0,
+      systolicPressure: sensorData.systolicPressure ? parseInt(sensorData.systolicPressure, 10) : 0,
+      diastolicPressure: sensorData.diastolicPressure ? parseInt(sensorData.diastolicPressure, 10) : 0,
+    });
   }, [sensorData]);
 
   useEffect(() => {
@@ -98,78 +241,53 @@ export function BraceletPage() {
   };
 
   const handleRefreshReadings = () => {
-    if (!sensorData.heartRate || !sensorData.bloodOxygen || !sensorData.temperature) {
-      toast.error('Please set your average health values in Medical Records first');
+    const availableSensors = SENSOR_CONFIGS.filter(({ key }) => sensorData[key]);
+
+    if (availableSensors.length === 0) {
+      toast.error('Please set at least one average health value in Medical Records first');
       return;
     }
 
-    const avgHR = parseInt(sensorData.heartRate);
-    const avgBO = parseInt(sensorData.bloodOxygen);
-    const avgTemp = parseFloat(sensorData.temperature);
+    setSimulatedReadings((currentReadings) => {
+      const nextReadings = { ...currentReadings };
 
-    // Generate random readings that may vary from average
-    const variance = Math.random();
-    
-    let newHeartRate, newBloodOxygen, newTemp;
+      availableSensors.forEach((sensor) => {
+        const average = sensor.parse(sensorData[sensor.key]);
+        const variance = Math.random();
+        let reading = average;
 
-    if (variance < 0.7) {
-      // 70% chance - normal readings close to average
-      newHeartRate = avgHR + Math.floor(Math.random() * 10 - 5);
-      newBloodOxygen = avgBO + Math.floor(Math.random() * 4 - 2);
-      newTemp = avgTemp + (Math.random() * 1 - 0.5);
-    } else if (variance < 0.9) {
-      // 20% chance - warning level readings
-      newHeartRate = avgHR + (Math.random() > 0.5 ? 20 : -15);
-      newBloodOxygen = avgBO + (Math.random() > 0.5 ? -5 : 2);
-      newTemp = avgTemp + (Math.random() > 0.5 ? 2 : -1.5);
-    } else {
-      // 10% chance - critical readings
-      newHeartRate = avgHR + (Math.random() > 0.5 ? 40 : -30);
-      newBloodOxygen = avgBO - 10;
-      newTemp = avgTemp + (Math.random() > 0.5 ? 3.5 : -2.5);
-    }
+        if (variance < 0.7) {
+          reading = average + (Math.random() * (sensor.normalVariance * 2) - sensor.normalVariance);
+        } else if (variance < 0.9) {
+          reading = average + (Math.random() > 0.5 ? sensor.warningPositive : -sensor.warningNegative);
+        } else {
+          reading = average + (Math.random() > 0.5 ? sensor.criticalPositive : -sensor.criticalNegative);
+        }
 
-    setSimulatedReadings({
-      heartRate: Math.max(30, Math.min(200, Math.round(newHeartRate))),
-      bloodOxygen: Math.max(70, Math.min(100, Math.round(newBloodOxygen))),
-      temperature: Math.max(95, Math.min(105, parseFloat(newTemp.toFixed(1)))),
+        nextReadings[sensor.key] = sensor.format(clamp(reading, sensor.min, sensor.max));
+      });
+
+      return nextReadings;
     });
 
     toast.success('Sensor readings updated');
   };
 
-  const sensorReadings = sensorData.heartRate ? [
-    {
-      label: 'Heart Rate',
-      average: parseInt(sensorData.heartRate),
-      current: simulatedReadings.heartRate || parseInt(sensorData.heartRate),
-      unit: 'bpm',
-      lowThreshold: parseInt(sensorData.heartRate) - 10,
-      highThreshold: parseInt(sensorData.heartRate) + 10,
-      criticalLowThreshold: parseInt(sensorData.heartRate) - 25,
-      criticalHighThreshold: parseInt(sensorData.heartRate) + 35,
-    },
-    {
-      label: 'Blood Oxygen',
-      average: parseInt(sensorData.bloodOxygen),
-      current: simulatedReadings.bloodOxygen || parseInt(sensorData.bloodOxygen),
-      unit: '%',
-      lowThreshold: parseInt(sensorData.bloodOxygen) - 3,
-      highThreshold: 100,
-      criticalLowThreshold: parseInt(sensorData.bloodOxygen) - 8,
-      criticalHighThreshold: 100,
-    },
-    {
-      label: 'Body Temperature',
-      average: parseFloat(sensorData.temperature),
-      current: simulatedReadings.temperature || parseFloat(sensorData.temperature),
-      unit: '°F',
-      lowThreshold: parseFloat(sensorData.temperature) - 1,
-      highThreshold: parseFloat(sensorData.temperature) + 1.5,
-      criticalLowThreshold: parseFloat(sensorData.temperature) - 2,
-      criticalHighThreshold: parseFloat(sensorData.temperature) + 3,
-    },
-  ] : [];
+  const sensorReadings = SENSOR_CONFIGS.filter(({ key }) => sensorData[key]).map((sensor) => {
+    const average = sensor.parse(sensorData[sensor.key]);
+    const current = simulatedReadings[sensor.key] || average;
+
+    return {
+      label: sensor.label,
+      average,
+      current,
+      unit: sensor.unit,
+      lowThreshold: clamp(average - sensor.lowDelta, sensor.min, sensor.max),
+      highThreshold: clamp(average + sensor.highDelta, sensor.min, sensor.max),
+      criticalLowThreshold: clamp(average - sensor.criticalLowDelta, sensor.min, sensor.max),
+      criticalHighThreshold: clamp(average + sensor.criticalHighDelta, sensor.min, sensor.max),
+    };
+  });
   const isPaired = pairedCode.length > 0;
 
   return (
@@ -357,8 +475,8 @@ export function BraceletPage() {
             </CardHeader>
             <CardContent>
               <p className="text-yellow-800 mb-4">
-                To see live sensor readings and enable automatic emergency detection, please set your average health
-                values in the Medical Records page.
+                To see live sensor readings and enable automatic emergency detection, please set at least one average
+                health value in the Medical Records page.
               </p>
               <Button onClick={() => navigate('/dashboard/medical-records')} className="bg-yellow-600 hover:bg-yellow-700">
                 Go to Medical Records
@@ -417,7 +535,8 @@ export function BraceletPage() {
                 <div>
                   <h4 className="font-medium">Set Your Average Values</h4>
                   <p className="text-sm text-gray-600">
-                    Go to Medical Records and enter your normal heart rate, blood oxygen, and temperature values.
+                    Go to Medical Records and enter your normal heart rate, oxygen, temperature, breathing, and blood
+                    pressure values.
                   </p>
                 </div>
               </div>

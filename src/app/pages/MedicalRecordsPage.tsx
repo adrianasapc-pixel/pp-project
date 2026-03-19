@@ -12,6 +12,26 @@ import { Plus, Trash2, FileText, AlertCircle, Pill, Syringe, Heart, Activity, X 
 import { toast } from 'sonner';
 import { Badge } from '../components/ui/badge';
 
+const EMPTY_SENSOR_FORM = {
+  heartRate: '',
+  bloodOxygen: '',
+  temperature: '',
+  respiratoryRate: '',
+  systolicPressure: '',
+  diastolicPressure: '',
+  fallDetection: 'Active',
+  gpsLocation: 'Enabled',
+};
+
+const NUMERIC_SENSOR_KEYS = [
+  'heartRate',
+  'bloodOxygen',
+  'temperature',
+  'respiratoryRate',
+  'systolicPressure',
+  'diastolicPressure',
+] as const;
+
 export function MedicalRecordsPage() {
   const { medicalRecords, addMedicalRecord, deleteMedicalRecord, sensorData, updateSensorData } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -28,23 +48,17 @@ export function MedicalRecordsPage() {
   const [conditions, setConditions] = useState<string[]>(['']);
 
   // Sensor data form state
-  const [sensorFormData, setSensorFormData] = useState({
-    heartRate: '',
-    bloodOxygen: '',
-    temperature: '',
-    fallDetection: 'Active',
-    gpsLocation: 'Enabled',
-  });
+  const [sensorFormData, setSensorFormData] = useState(EMPTY_SENSOR_FORM);
 
   useEffect(() => {
-    if (!sensorData.lastUpdated && !sensorData.heartRate && !sensorData.bloodOxygen && !sensorData.temperature) {
-      return;
-    }
-
     setSensorFormData({
+      ...EMPTY_SENSOR_FORM,
       heartRate: sensorData.heartRate,
       bloodOxygen: sensorData.bloodOxygen,
       temperature: sensorData.temperature,
+      respiratoryRate: sensorData.respiratoryRate || '',
+      systolicPressure: sensorData.systolicPressure || '',
+      diastolicPressure: sensorData.diastolicPressure || '',
       fallDetection: sensorData.fallDetection || 'Active',
       gpsLocation: sensorData.gpsLocation || 'Enabled',
     });
@@ -123,8 +137,10 @@ export function MedicalRecordsPage() {
 
   // Sensor data handler
   const saveSensorData = () => {
-    if (!sensorFormData.heartRate || !sensorFormData.bloodOxygen || !sensorFormData.temperature) {
-      toast.error('Please fill in all sensor data fields');
+    const hasAtLeastOneMetric = NUMERIC_SENSOR_KEYS.some((key) => sensorFormData[key].trim() !== '');
+
+    if (!hasAtLeastOneMetric) {
+      toast.error('Enter at least one average health value before saving.');
       return;
     }
 
@@ -307,7 +323,9 @@ export function MedicalRecordsPage() {
               <Activity className="h-5 w-5" />
               Average Health Values
             </CardTitle>
-            <CardDescription>Enter your normal/average health metrics - the bracelet will detect deviations</CardDescription>
+            <CardDescription>
+              Enter your normal health metrics. Core bracelet sensors plus optional vitals improve monitoring accuracy.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -346,6 +364,39 @@ export function MedicalRecordsPage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="respiratoryRate">Average Respiratory Rate (breaths/min)</Label>
+                <Input
+                  id="respiratoryRate"
+                  type="number"
+                  placeholder="e.g., 16"
+                  value={sensorFormData.respiratoryRate}
+                  onChange={(e) => setSensorFormData({ ...sensorFormData, respiratoryRate: e.target.value })}
+                  className="bg-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="systolicPressure">Average Blood Pressure Systolic (mmHg)</Label>
+                <Input
+                  id="systolicPressure"
+                  type="number"
+                  placeholder="e.g., 120"
+                  value={sensorFormData.systolicPressure}
+                  onChange={(e) => setSensorFormData({ ...sensorFormData, systolicPressure: e.target.value })}
+                  className="bg-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="diastolicPressure">Average Blood Pressure Diastolic (mmHg)</Label>
+                <Input
+                  id="diastolicPressure"
+                  type="number"
+                  placeholder="e.g., 80"
+                  value={sensorFormData.diastolicPressure}
+                  onChange={(e) => setSensorFormData({ ...sensorFormData, diastolicPressure: e.target.value })}
+                  className="bg-white"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="fallDetection">Fall Detection</Label>
                 <Select 
                   value={sensorFormData.fallDetection} 
@@ -380,7 +431,7 @@ export function MedicalRecordsPage() {
               Save Average Values
             </Button>
             <p className="text-xs text-blue-700 text-center">
-              The bracelet will automatically detect if readings are too high or too low and alert emergency contacts
+              The bracelet can compare heart rate, oxygen, temperature, breathing, and blood pressure baselines to spot abnormal changes
             </p>
             {sensorData.lastUpdated && (
               <p className="text-sm text-blue-700 text-center font-medium">

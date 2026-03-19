@@ -32,6 +32,9 @@ interface SensorData {
   heartRate: string;
   bloodOxygen: string;
   temperature: string;
+  respiratoryRate: string;
+  systolicPressure: string;
+  diastolicPressure: string;
   fallDetection: string;
   gpsLocation: string;
   lastUpdated: string;
@@ -65,6 +68,9 @@ const EMPTY_SENSOR_DATA: SensorData = {
   heartRate: '',
   bloodOxygen: '',
   temperature: '',
+  respiratoryRate: '',
+  systolicPressure: '',
+  diastolicPressure: '',
   fallDetection: '',
   gpsLocation: '',
   lastUpdated: '',
@@ -140,7 +146,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setMedicalRecords(readStorage(getUserStorageKey(user.id, 'records'), []));
     setEmergencyContacts(readStorage(getUserStorageKey(user.id, 'contacts'), []));
-    setSensorData(readStorage(getUserStorageKey(user.id, 'sensorData'), EMPTY_SENSOR_DATA));
+    setSensorData({
+      ...EMPTY_SENSOR_DATA,
+      ...readStorage(getUserStorageKey(user.id, 'sensorData'), EMPTY_SENSOR_DATA),
+    });
     setLoadedUserId(user.id);
   }, [user, isHydrated]);
 
