@@ -147,9 +147,19 @@ export function SignupPage() {
                   checked={agreedToTerms}
                   onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
                 />
-                <label htmlFor="terms" className="text-sm text-gray-600 leading-tight cursor-pointer">
-                  I agree to the terms and conditions and understand this is a prototype demonstration
-                </label>
+                <div className="text-sm text-gray-600 leading-tight">
+                  <button type="button" className="cursor-pointer" onClick={() => setAgreedToTerms((current) => !current)}>
+                    I agree to the{' '}
+                  </button>
+                  <Link to="/terms" className="text-blue-600 hover:underline">
+                    demo terms
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy" className="text-blue-600 hover:underline">
+                    privacy notice
+                  </Link>
+                  .
+                </div>
               </div>
 
               <p className="text-xs text-gray-500">

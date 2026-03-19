@@ -8,6 +8,8 @@ import { EmergencyContactsPage } from "./pages/EmergencyContactsPage";
 import { BraceletPage } from "./pages/BraceletPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { RootLayout } from "./components/RootLayout";
+import { InfoPage } from "./pages/InfoPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 
 export const router = createBrowserRouter([
   {
@@ -25,6 +27,22 @@ export const router = createBrowserRouter([
       {
         path: "signup",
         Component: SignupPage,
+      },
+      {
+        path: "pricing",
+        Component: InfoPage,
+      },
+      {
+        path: "contact",
+        Component: InfoPage,
+      },
+      {
+        path: "privacy",
+        Component: InfoPage,
+      },
+      {
+        path: "terms",
+        Component: InfoPage,
       },
       {
         path: "dashboard",
@@ -47,6 +65,10 @@ export const router = createBrowserRouter([
             Component: BraceletPage,
           },
         ],
+      },
+      {
+        path: "*",
+        Component: NotFoundPage,
       },
     ],
   },

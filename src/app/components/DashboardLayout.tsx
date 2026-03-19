@@ -33,10 +33,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-teal-500 to-teal-700 p-2 rounded-lg">
-                <Heart className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">VitaLock</span>
+              <button
+                type="button"
+                className="flex items-center gap-3"
+                onClick={() => navigate('/dashboard')}
+              >
+                <div className="bg-gradient-to-br from-teal-500 to-teal-700 p-2 rounded-lg">
+                  <Heart className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xl font-bold text-gray-900">VitaLock</span>
+              </button>
             </div>
 
             {/* Desktop Navigation */}

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -9,6 +10,17 @@ import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 export function DashboardPage() {
   const { user, medicalRecords, emergencyContacts } = useAuth();
   const navigate = useNavigate();
+  const [braceletStatus, setBraceletStatus] = useState<'Paired' | 'Pending'>('Pending');
+
+  useEffect(() => {
+    if (!user) {
+      setBraceletStatus('Pending');
+      return;
+    }
+
+    const pairingCode = localStorage.getItem(`medBracelet_pairingCode_${user.id}`);
+    setBraceletStatus(pairingCode ? 'Paired' : 'Pending');
+  }, [user]);
 
   const stats = [
     {
@@ -29,10 +41,10 @@ export function DashboardPage() {
     },
     {
       title: 'Bracelet Status',
-      value: 'Active',
+      value: braceletStatus,
       icon: Watch,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: braceletStatus === 'Paired' ? 'text-emerald-600' : 'text-amber-600',
+      bgColor: braceletStatus === 'Paired' ? 'bg-emerald-100' : 'bg-amber-100',
       action: () => navigate('/dashboard/bracelet'),
     },
   ];

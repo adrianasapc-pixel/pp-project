@@ -97,7 +97,7 @@ export function LoginPage() {
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-teal-950">Production demo access</p>
+                  <p className="text-sm font-semibold text-teal-950">Demo access</p>
                   <p className="text-sm text-teal-900">
                     This prototype stores accounts in the browser. Use the seeded demo account or create one on this
                     device first.
@@ -165,15 +165,15 @@ export function LoginPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Shield className="h-4 w-4 text-blue-600" />
-                  <span>Bank-level encryption</span>
+                  <span>Local demo data stays in your browser</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Activity className="h-4 w-4 text-blue-600" />
-                  <span>Real-time emergency alerts</span>
+                  <span>Live emergency workflow simulation</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Heart className="h-4 w-4 text-blue-600" />
-                  <span>HIPAA compliant (prototype)</span>
+                  <span>Bracelet pairing and profile demo</span>
                 </div>
               </div>
             </div>

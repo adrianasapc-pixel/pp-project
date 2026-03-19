@@ -217,8 +217,13 @@ export function BraceletPage() {
   };
 
   const handleSimulateEmergency = () => {
+    if (!isPaired) {
+      toast.error('Pair the bracelet first so the demo can link the alert to your profile.');
+      return;
+    }
+
     setSimulateEmergency(true);
-    toast.error('Emergency detected! Contacting emergency services...', {
+    toast.error('Emergency detected! Starting the demo alert workflow...', {
       duration: 5000,
     });
 
@@ -230,7 +235,7 @@ export function BraceletPage() {
         });
       }
       setTimeout(() => {
-        toast.info('911 has been contacted with your location and medical information', {
+        toast.info('Demo incident log created with location and medical information', {
           duration: 5000,
         });
         setTimeout(() => {
@@ -304,7 +309,7 @@ export function BraceletPage() {
             <AlertTriangle className="h-5 w-5 text-red-600" />
             <AlertTitle className="text-red-900">EMERGENCY ALERT ACTIVE</AlertTitle>
             <AlertDescription className="text-red-800">
-              Bracelet has detected an emergency. Contacting emergency services and contacts...
+              Bracelet has detected an emergency. Running the demo contact and incident workflow...
             </AlertDescription>
           </Alert>
         )}
@@ -460,7 +465,7 @@ export function BraceletPage() {
                 <p className="text-sm text-blue-900">
                   <strong>How it works:</strong> The bracelet continuously monitors your vitals. If readings enter the yellow
                   (warning) or red (critical) zones, it will automatically alert your emergency contacts. Critical readings
-                  trigger immediate 911 contact.
+                  trigger a simulated incident response in the demo.
                 </p>
               </div>
             </CardContent>
@@ -493,7 +498,7 @@ export function BraceletPage() {
               Emergency Alert System
             </CardTitle>
             <CardDescription>
-              Test the emergency notification system
+              Test the demo emergency notification workflow
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -513,7 +518,7 @@ export function BraceletPage() {
               <Alert className="border-yellow-300 bg-yellow-50">
                 <AlertTriangle className="h-4 w-4 text-yellow-600" />
                 <AlertDescription className="text-yellow-800">
-                  You don't have any emergency contacts set up yet. Add contacts to receive emergency notifications.
+                  You don't have any emergency contacts set up yet. Add contacts to make the demo alert flow more complete.
                 </AlertDescription>
               </Alert>
             )}
@@ -569,7 +574,7 @@ export function BraceletPage() {
                 <div>
                   <h4 className="font-medium">Wear and Monitor</h4>
                   <p className="text-sm text-gray-600">
-                    The bracelet continuously monitors your vitals. If readings deviate significantly, emergency contacts are alerted automatically.
+                    The bracelet continuously monitors your vitals. If readings deviate significantly, the demo alert flow can notify your saved contacts.
                   </p>
                 </div>
               </div>
@@ -602,7 +607,7 @@ export function BraceletPage() {
                 ✓ Pairing keeps your emergency profile connected to the right device
               </p>
               <p className="text-sm text-gray-600">
-                ✓ Automatic emergency detection and notification system active
+                ✓ Demo emergency detection and notification workflow ready
               </p>
             </div>
           </CardContent>

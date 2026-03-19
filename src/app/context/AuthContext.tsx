@@ -48,6 +48,7 @@ interface AuthContextType {
   logout: () => void;
   medicalRecords: MedicalRecord[];
   addMedicalRecord: (record: Omit<MedicalRecord, 'id'>) => void;
+  updateMedicalRecord: (id: string, record: Omit<MedicalRecord, 'id'>) => void;
   deleteMedicalRecord: (id: string) => void;
   emergencyContacts: EmergencyContact[];
   addEmergencyContact: (contact: Omit<EmergencyContact, 'id'>) => void;
@@ -101,6 +102,18 @@ function writeStorage<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function ensurePrimaryEmergencyContact(contacts: EmergencyContact[]) {
+  if (contacts.length === 0) {
+    return contacts;
+  }
+
+  if (contacts.some((contact) => contact.isPrimary)) {
+    return contacts;
+  }
+
+  return contacts.map((contact, index) => (index === 0 ? { ...contact, isPrimary: true } : contact));
+}
+
 function getUserStorageKey(userId: string, key: 'records' | 'contacts' | 'sensorData') {
   return `medBracelet_${key}_${userId}`;
 }
@@ -145,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setMedicalRecords(readStorage(getUserStorageKey(user.id, 'records'), []));
-    setEmergencyContacts(readStorage(getUserStorageKey(user.id, 'contacts'), []));
+    setEmergencyContacts(ensurePrimaryEmergencyContact(readStorage(getUserStorageKey(user.id, 'contacts'), [])));
     setSensorData({
       ...EMPTY_SENSOR_DATA,
       ...readStorage(getUserStorageKey(user.id, 'sensorData'), EMPTY_SENSOR_DATA),
@@ -221,31 +234,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setMedicalRecords((currentRecords) => currentRecords.filter((record) => record.id !== id));
   };
 
-  const addEmergencyContact = (contact: Omit<EmergencyContact, 'id'>) => {
-    const newContact = {
-      ...contact,
-      id: Date.now().toString(),
-    };
-    setEmergencyContacts((currentContacts) => {
-      if (!newContact.isPrimary) {
-        return [...currentContacts, newContact];
-      }
+  const updateMedicalRecord = (id: string, updatedRecord: Omit<MedicalRecord, 'id'>) => {
+    setMedicalRecords((currentRecords) =>
+      currentRecords.map((record) => (record.id === id ? { ...updatedRecord, id } : record)),
+    );
+  };
 
-      return [...currentContacts.map((existingContact) => ({ ...existingContact, isPrimary: false })), newContact];
+  const addEmergencyContact = (contact: Omit<EmergencyContact, 'id'>) => {
+    setEmergencyContacts((currentContacts) => {
+      const shouldBePrimary = currentContacts.length === 0 || contact.isPrimary;
+      const nextContacts = shouldBePrimary
+        ? currentContacts.map((existingContact) => ({ ...existingContact, isPrimary: false }))
+        : currentContacts;
+      const newContact = {
+        ...contact,
+        id: Date.now().toString(),
+        isPrimary: shouldBePrimary,
+      };
+
+      return ensurePrimaryEmergencyContact([...nextContacts, newContact]);
     });
   };
 
   const deleteEmergencyContact = (id: string) => {
-    setEmergencyContacts((currentContacts) => currentContacts.filter((contact) => contact.id !== id));
+    setEmergencyContacts((currentContacts) =>
+      ensurePrimaryEmergencyContact(currentContacts.filter((contact) => contact.id !== id)),
+    );
   };
 
   const updateEmergencyContact = (id: string, updatedContact: Partial<EmergencyContact>) => {
     setEmergencyContacts((currentContacts) => {
-      const nextContacts = updatedContact.isPrimary
+      const nextContacts = updatedContact.isPrimary === true
         ? currentContacts.map((contact) => ({ ...contact, isPrimary: false }))
         : currentContacts;
 
-      return nextContacts.map((contact) => (contact.id === id ? { ...contact, ...updatedContact } : contact));
+      return ensurePrimaryEmergencyContact(
+        nextContacts.map((contact) => (contact.id === id ? { ...contact, ...updatedContact } : contact)),
+      );
     });
   };
 
@@ -285,6 +310,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     medicalRecords,
     addMedicalRecord,
+    updateMedicalRecord,
     deleteMedicalRecord,
     emergencyContacts,
     addEmergencyContact,

@@ -7,7 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Plus, Trash2, Users, Phone, Star } from 'lucide-react';
+import { Plus, Trash2, Users, Phone, Star, Pencil, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '../components/ui/badge';
 import { Switch } from '../components/ui/switch';
@@ -15,12 +15,49 @@ import { Switch } from '../components/ui/switch';
 export function EmergencyContactsPage() {
   const { emergencyContacts, addEmergencyContact, deleteEmergencyContact, updateEmergencyContact } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     relationship: '',
     phone: '',
     isPrimary: false,
   });
+
+  const resetForm = () => {
+    setEditingContactId(null);
+    setFormData({
+      name: '',
+      relationship: '',
+      phone: '',
+      isPrimary: false,
+    });
+  };
+
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    resetForm();
+  };
+
+  const openCreateDialog = () => {
+    resetForm();
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (id: string) => {
+    const contact = emergencyContacts.find((item) => item.id === id);
+    if (!contact) {
+      return;
+    }
+
+    setEditingContactId(id);
+    setFormData({
+      name: contact.name,
+      relationship: contact.relationship,
+      phone: contact.phone,
+      isPrimary: contact.isPrimary,
+    });
+    setIsDialogOpen(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,15 +74,15 @@ export function EmergencyContactsPage() {
       return;
     }
 
-    addEmergencyContact(formData);
-    toast.success('Emergency contact added successfully!');
-    setIsDialogOpen(false);
-    setFormData({
-      name: '',
-      relationship: '',
-      phone: '',
-      isPrimary: false,
-    });
+    if (editingContactId) {
+      updateEmergencyContact(editingContactId, formData);
+      toast.success('Emergency contact updated successfully!');
+    } else {
+      addEmergencyContact(formData);
+      toast.success('Emergency contact added successfully!');
+    }
+
+    closeDialog();
   };
 
   const handleDelete = (id: string) => {
@@ -66,18 +103,20 @@ export function EmergencyContactsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Emergency Contacts</h1>
             <p className="text-gray-600 mt-2">People to contact in case of emergency</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => (open ? setIsDialogOpen(true) : closeDialog())}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={openCreateDialog}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Contact
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Add Emergency Contact</DialogTitle>
+                <DialogTitle>{editingContactId ? 'Edit Emergency Contact' : 'Add Emergency Contact'}</DialogTitle>
                 <DialogDescription>
-                  Add someone who should be notified in case of emergency
+                  {editingContactId
+                    ? 'Update who should be notified in the demo emergency flow'
+                    : 'Add someone who should be notified in case of emergency'}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -129,9 +168,9 @@ export function EmergencyContactsPage() {
                 </div>
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                    Add Contact
+                    {editingContactId ? 'Save Changes' : 'Add Contact'}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={closeDialog}>
                     Cancel
                   </Button>
                 </div>
@@ -148,7 +187,7 @@ export function EmergencyContactsPage() {
               <p className="text-gray-500 text-center mb-4">
                 Add trusted people who should be notified in case of emergency
               </p>
-              <Button onClick={() => setIsDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={openCreateDialog} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your First Contact
               </Button>
@@ -176,14 +215,24 @@ export function EmergencyContactsPage() {
                         </Badge>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(contact.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(contact.id)}
+                        className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(contact.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -192,6 +241,20 @@ export function EmergencyContactsPage() {
                     <a href={`tel:${contact.phone}`} className="hover:underline">
                       {contact.phone}
                     </a>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button asChild variant="outline" size="sm" className="flex-1">
+                      <a href={`tel:${contact.phone}`}>
+                        <Phone className="h-4 w-4 mr-2" />
+                        Call
+                      </a>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="flex-1">
+                      <a href={`sms:${contact.phone}`}>
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Text
+                      </a>
+                    </Button>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t">
                     <span className="text-sm text-gray-600">Primary Contact</span>
@@ -213,10 +276,10 @@ export function EmergencyContactsPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-blue-800">
             <p>• Your bracelet sensors detect falls, irregular vitals, or emergency button press</p>
-            <p>• Primary contacts are notified first via SMS and phone call</p>
-            <p>• If primary contacts don't respond, secondary contacts are notified</p>
-            <p>• 911 is automatically contacted for severe emergencies</p>
-            <p>• Your location and medical information are shared with responders</p>
+            <p>• The primary contact is surfaced first in the demo emergency workflow</p>
+            <p>• Call and text shortcuts work directly from this screen on supported devices</p>
+            <p>• You can edit contact details at any time for the live demo</p>
+            <p>• Emergency alerts are simulated in-app for presentation purposes</p>
           </CardContent>
         </Card>
       </div>

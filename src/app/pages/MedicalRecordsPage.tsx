@@ -8,7 +8,7 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Plus, Trash2, FileText, AlertCircle, Pill, Syringe, Heart, Activity, X } from 'lucide-react';
+import { Plus, Trash2, FileText, AlertCircle, Pill, Syringe, Heart, Activity, X, Paperclip, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '../components/ui/badge';
 
@@ -32,17 +32,37 @@ const NUMERIC_SENSOR_KEYS = [
   'diastolicPressure',
 ] as const;
 
-export function MedicalRecordsPage() {
-  const { medicalRecords, addMedicalRecord, deleteMedicalRecord, sensorData, updateSensorData } = useAuth();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
+const MAX_ATTACHMENT_SIZE = 1024 * 1024;
+
+function createEmptyRecordForm() {
+  return {
     type: '',
     title: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
     file: '',
     fileName: '',
+  };
+}
+
+function toRecordDateLabel(value: string) {
+  return new Date(`${value}T00:00:00`).toLocaleDateString();
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(new Error('Unable to read file'));
+    reader.readAsDataURL(file);
   });
+}
+
+export function MedicalRecordsPage() {
+  const { medicalRecords, addMedicalRecord, updateMedicalRecord, deleteMedicalRecord, sensorData, updateSensorData } = useAuth();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [formData, setFormData] = useState(createEmptyRecordForm());
 
   // Medical conditions state
   const [conditions, setConditions] = useState<string[]>(['']);
@@ -64,6 +84,36 @@ export function MedicalRecordsPage() {
     });
   }, [sensorData]);
 
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setEditingRecordId(null);
+    setFormData(createEmptyRecordForm());
+  };
+
+  const openCreateDialog = () => {
+    setEditingRecordId(null);
+    setFormData(createEmptyRecordForm());
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (recordId: string) => {
+    const record = medicalRecords.find((item) => item.id === recordId);
+    if (!record) {
+      return;
+    }
+
+    setEditingRecordId(recordId);
+    setFormData({
+      type: record.type,
+      title: record.title,
+      description: record.description,
+      date: record.date,
+      file: record.file || '',
+      fileName: record.fileName || '',
+    });
+    setIsDialogOpen(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -72,25 +122,32 @@ export function MedicalRecordsPage() {
       return;
     }
 
-    addMedicalRecord(formData);
-    toast.success('Medical record added successfully!');
-    setIsDialogOpen(false);
-    setFormData({
-      type: '',
-      title: '',
-      description: '',
-      date: new Date().toISOString().split('T')[0],
-      file: '',
-      fileName: '',
-    });
+    if (editingRecordId) {
+      updateMedicalRecord(editingRecordId, formData);
+      toast.success('Medical record updated successfully!');
+    } else {
+      addMedicalRecord(formData);
+      toast.success('Medical record added successfully!');
+    }
+
+    closeDialog();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // In a real app, you'd upload to a server. For demo, we'll store filename only
-      setFormData({ ...formData, fileName: file.name, file: URL.createObjectURL(file) });
-      toast.success(`File "${file.name}" attached`);
+      if (file.size > MAX_ATTACHMENT_SIZE) {
+        toast.error('Attachments must be 1 MB or smaller for the demo.');
+        return;
+      }
+
+      try {
+        const fileDataUrl = await readFileAsDataUrl(file);
+        setFormData((currentData) => ({ ...currentData, fileName: file.name, file: fileDataUrl }));
+        toast.success(`File "${file.name}" attached`);
+      } catch {
+        toast.error('Unable to attach this file. Please try another one.');
+      }
     }
   };
 
@@ -190,18 +247,20 @@ export function MedicalRecordsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Medical Records</h1>
             <p className="text-gray-600 mt-2">Manage your medical information securely</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => (open ? setIsDialogOpen(true) : closeDialog())}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={openCreateDialog}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Record
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Add Medical Record</DialogTitle>
+                <DialogTitle>{editingRecordId ? 'Edit Medical Record' : 'Add Medical Record'}</DialogTitle>
                 <DialogDescription>
-                  Add important medical information to your profile
+                  {editingRecordId
+                    ? 'Update the details for this medical record'
+                    : 'Add important medical information to your profile'}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -256,12 +315,29 @@ export function MedicalRecordsPage() {
                     type="file"
                     onChange={handleFileChange}
                   />
+                  {formData.fileName && (
+                    <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                      <span className="flex items-center gap-2 text-slate-700">
+                        <Paperclip className="h-4 w-4" />
+                        {formData.fileName}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => setFormData((currentData) => ({ ...currentData, file: '', fileName: '' }))}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                    Add Record
+                    {editingRecordId ? 'Save Changes' : 'Add Record'}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={closeDialog}>
                     Cancel
                   </Button>
                 </div>
@@ -449,7 +525,7 @@ export function MedicalRecordsPage() {
               <p className="text-gray-500 text-center mb-4">
                 Start by adding your allergies, medications, and medical conditions
               </p>
-              <Button onClick={() => setIsDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={openCreateDialog} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your First Record
               </Button>
@@ -475,6 +551,14 @@ export function MedicalRecordsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => openEditDialog(record.id)}
+                      className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleDelete(record.id)}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
@@ -484,8 +568,20 @@ export function MedicalRecordsPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 mb-3">{record.description}</p>
+                  {record.fileName && record.file && (
+                    <a
+                      href={record.file}
+                      download={record.fileName}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      {record.fileName}
+                    </a>
+                  )}
                   <p className="text-sm text-gray-500">
-                    Date: {new Date(record.date).toLocaleDateString()}
+                    Date: {toRecordDateLabel(record.date)}
                   </p>
                 </CardContent>
               </Card>
