@@ -32,6 +32,20 @@ const NUMERIC_SENSOR_KEYS = [
   'diastolicPressure',
 ] as const;
 
+type NumericSensorKey = (typeof NUMERIC_SENSOR_KEYS)[number];
+
+const SENSOR_LIMITS: Record<
+  NumericSensorKey,
+  { label: string; min: number; max: number; requiresInteger?: boolean }
+> = {
+  heartRate: { label: 'Heart rate', min: 30, max: 200, requiresInteger: true },
+  bloodOxygen: { label: 'Blood oxygen', min: 70, max: 100, requiresInteger: true },
+  temperature: { label: 'Body temperature', min: 95, max: 105 },
+  respiratoryRate: { label: 'Respiratory rate', min: 6, max: 40, requiresInteger: true },
+  systolicPressure: { label: 'Systolic pressure', min: 70, max: 220, requiresInteger: true },
+  diastolicPressure: { label: 'Diastolic pressure', min: 40, max: 140, requiresInteger: true },
+};
+
 const MAX_ATTACHMENT_SIZE = 1024 * 1024;
 
 function createEmptyRecordForm() {
@@ -201,8 +215,50 @@ export function MedicalRecordsPage() {
       return;
     }
 
+    const normalizedSensorData = { ...sensorFormData };
+    const parsedValues: Partial<Record<NumericSensorKey, number>> = {};
+
+    for (const key of NUMERIC_SENSOR_KEYS) {
+      const rawValue = sensorFormData[key].trim();
+
+      if (rawValue === '') {
+        normalizedSensorData[key] = '';
+        continue;
+      }
+
+      const numericValue = Number(rawValue);
+      const { label, min, max, requiresInteger } = SENSOR_LIMITS[key];
+
+      if (!Number.isFinite(numericValue)) {
+        toast.error(`${label} must be a valid number.`);
+        return;
+      }
+
+      if (requiresInteger && !Number.isInteger(numericValue)) {
+        toast.error(`${label} must be a whole number.`);
+        return;
+      }
+
+      if (numericValue < min || numericValue > max) {
+        toast.error(`${label} should stay between ${min} and ${max}.`);
+        return;
+      }
+
+      parsedValues[key] = numericValue;
+      normalizedSensorData[key] = String(requiresInteger ? Math.trunc(numericValue) : numericValue);
+    }
+
+    if (
+      parsedValues.systolicPressure !== undefined &&
+      parsedValues.diastolicPressure !== undefined &&
+      parsedValues.diastolicPressure >= parsedValues.systolicPressure
+    ) {
+      toast.error('Diastolic pressure must be lower than systolic pressure.');
+      return;
+    }
+
     updateSensorData({
-      ...sensorFormData,
+      ...normalizedSensorData,
       lastUpdated: new Date().toLocaleString(),
     });
 

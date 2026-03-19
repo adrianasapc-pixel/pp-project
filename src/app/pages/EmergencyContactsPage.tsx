@@ -12,6 +12,23 @@ import { toast } from 'sonner';
 import { Badge } from '../components/ui/badge';
 import { Switch } from '../components/ui/switch';
 
+const MIN_PHONE_DIGITS = 7;
+
+function getPhoneDigits(phone: string) {
+  return phone.replace(/\D/g, '');
+}
+
+function getPhoneHrefValue(phone: string) {
+  const trimmedPhone = phone.trim();
+  const digits = getPhoneDigits(trimmedPhone);
+
+  if (digits.length < MIN_PHONE_DIGITS) {
+    return '';
+  }
+
+  return trimmedPhone.startsWith('+') ? `+${digits}` : digits;
+}
+
 export function EmergencyContactsPage() {
   const { emergencyContacts, addEmergencyContact, deleteEmergencyContact, updateEmergencyContact } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -68,17 +85,41 @@ export function EmergencyContactsPage() {
     }
 
     // Validate phone number format
-    const phoneRegex = /^[\d\s\-\+\(\)]+$/;
-    if (!phoneRegex.test(formData.phone)) {
+    const normalizedPhone = formData.phone.trim().replace(/\s+/g, ' ');
+    const phoneRegex = /^[\d\s\-+().]+$/;
+    if (!phoneRegex.test(normalizedPhone)) {
       toast.error('Please enter a valid phone number');
       return;
     }
 
+    if (getPhoneDigits(normalizedPhone).length < MIN_PHONE_DIGITS) {
+      toast.error('Phone numbers should include at least 7 digits');
+      return;
+    }
+
+    const contactPayload = {
+      ...formData,
+      phone: normalizedPhone,
+    };
+
+    const currentContact = editingContactId
+      ? emergencyContacts.find((contact) => contact.id === editingContactId)
+      : null;
+
+    if (currentContact?.isPrimary && !contactPayload.isPrimary) {
+      if (emergencyContacts.length === 1) {
+        toast.error('At least one primary contact is required.');
+      } else {
+        toast.info('Choose another contact as primary before turning this one off.');
+      }
+      return;
+    }
+
     if (editingContactId) {
-      updateEmergencyContact(editingContactId, formData);
+      updateEmergencyContact(editingContactId, contactPayload);
       toast.success('Emergency contact updated successfully!');
     } else {
-      addEmergencyContact(formData);
+      addEmergencyContact(contactPayload);
       toast.success('Emergency contact added successfully!');
     }
 
@@ -91,8 +132,18 @@ export function EmergencyContactsPage() {
   };
 
   const togglePrimary = (id: string, isPrimary: boolean) => {
+    if (!isPrimary) {
+      if (emergencyContacts.length === 1) {
+        toast.error('At least one primary contact is required.');
+        return;
+      }
+
+      toast.info('Choose another contact to make them primary.');
+      return;
+    }
+
     updateEmergencyContact(id, { isPrimary });
-    toast.success(isPrimary ? 'Set as primary contact' : 'Removed from primary contacts');
+    toast.success('Set as primary contact');
   };
 
   return (
@@ -195,77 +246,100 @@ export function EmergencyContactsPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {emergencyContacts.map((contact) => (
-              <Card key={contact.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-100 p-3 rounded-full">
-                        <Users className="h-6 w-6 text-blue-600" />
+            {emergencyContacts.map((contact) => {
+              const phoneHrefValue = getPhoneHrefValue(contact.phone);
+              const canUsePhoneActions = phoneHrefValue !== '';
+
+              return (
+                <Card key={contact.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-blue-100 p-3 rounded-full">
+                          <Users className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            {contact.name}
+                            {contact.isPrimary && (
+                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                            )}
+                          </CardTitle>
+                          <Badge variant="secondary" className="mt-1">
+                            {contact.relationship.charAt(0).toUpperCase() + contact.relationship.slice(1)}
+                          </Badge>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {contact.name}
-                          {contact.isPrimary && (
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                          )}
-                        </CardTitle>
-                        <Badge variant="secondary" className="mt-1">
-                          {contact.relationship.charAt(0).toUpperCase() + contact.relationship.slice(1)}
-                        </Badge>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(contact.id)}
+                          className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(contact.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditDialog(contact.id)}
-                        className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(contact.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      {canUsePhoneActions ? (
+                        <a href={`tel:${phoneHrefValue}`} className="hover:underline">
+                          {contact.phone}
+                        </a>
+                      ) : (
+                        <span>{contact.phone}</span>
+                      )}
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-gray-700">
-                    <Phone className="h-4 w-4 text-gray-500" />
-                    <a href={`tel:${contact.phone}`} className="hover:underline">
-                      {contact.phone}
-                    </a>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button asChild variant="outline" size="sm" className="flex-1">
-                      <a href={`tel:${contact.phone}`}>
-                        <Phone className="h-4 w-4 mr-2" />
-                        Call
-                      </a>
-                    </Button>
-                    <Button asChild variant="outline" size="sm" className="flex-1">
-                      <a href={`sms:${contact.phone}`}>
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Text
-                      </a>
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <span className="text-sm text-gray-600">Primary Contact</span>
-                    <Switch
-                      checked={contact.isPrimary}
-                      onCheckedChange={(checked) => togglePrimary(contact.id, checked)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="flex gap-2">
+                      {canUsePhoneActions ? (
+                        <Button asChild variant="outline" size="sm" className="flex-1">
+                          <a href={`tel:${phoneHrefValue}`}>
+                            <Phone className="h-4 w-4 mr-2" />
+                            Call
+                          </a>
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="flex-1" disabled>
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call
+                        </Button>
+                      )}
+                      {canUsePhoneActions ? (
+                        <Button asChild variant="outline" size="sm" className="flex-1">
+                          <a href={`sms:${phoneHrefValue}`}>
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Text
+                          </a>
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="flex-1" disabled>
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Text
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <span className="text-sm text-gray-600">Primary Contact</span>
+                      <Switch
+                        checked={contact.isPrimary}
+                        onCheckedChange={(checked) => togglePrimary(contact.id, checked)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 
