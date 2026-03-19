@@ -157,8 +157,8 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-start gap-4">
-              <div className="bg-blue-100 p-2 rounded-full">
-                <span className="font-bold text-blue-600">1</span>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
+                <span className="font-bold leading-none text-blue-600">1</span>
               </div>
               <div>
                 <h4 className="font-medium">Store Your Medical Information</h4>
@@ -168,8 +168,8 @@ export function DashboardPage() {
               </div>
             </div>
             <div className="flex items-start gap-4">
-              <div className="bg-blue-100 p-2 rounded-full">
-                <span className="font-bold text-blue-600">2</span>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
+                <span className="font-bold leading-none text-blue-600">2</span>
               </div>
               <div>
                 <h4 className="font-medium">Link Your Bracelet</h4>
@@ -179,8 +179,8 @@ export function DashboardPage() {
               </div>
             </div>
             <div className="flex items-start gap-4">
-              <div className="bg-blue-100 p-2 rounded-full">
-                <span className="font-bold text-blue-600">3</span>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
+                <span className="font-bold leading-none text-blue-600">3</span>
               </div>
               <div>
                 <h4 className="font-medium">Automatic Emergency Detection</h4>
