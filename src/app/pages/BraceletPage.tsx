@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { QRCodeSVG } from 'qrcode.react';
-import { Download, Watch, Activity, AlertTriangle, CheckCircle, Bell, Thermometer, RefreshCw } from 'lucide-react';
+import { Input } from '../components/ui/input';
+import { Watch, Activity, AlertTriangle, CheckCircle, Bell, Link2, RefreshCw, Unplug } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
@@ -15,20 +15,14 @@ export function BraceletPage() {
   const { user, medicalRecords, emergencyContacts, sensorData } = useAuth();
   const navigate = useNavigate();
   const [simulateEmergency, setSimulateEmergency] = useState(false);
+  const [connectionCode, setConnectionCode] = useState('');
+  const [pairedCode, setPairedCode] = useState('');
   const [simulatedReadings, setSimulatedReadings] = useState({
     heartRate: 0,
     bloodOxygen: 0,
     temperature: 0,
   });
-
-  // Generate unique QR code data
-  const qrData = JSON.stringify({
-    userId: user?.id,
-    name: user?.name,
-    email: user?.email,
-    emergencyUrl: `https://vitalock.app/emergency/${user?.id}`,
-    timestamp: Date.now(),
-  });
+  const pairingStorageKey = user ? `medBracelet_pairingCode_${user.id}` : null;
 
   // Simulate live sensor readings based on average values
   useEffect(() => {
@@ -42,22 +36,41 @@ export function BraceletPage() {
     }
   }, [sensorData]);
 
-  const handleDownloadQR = () => {
-    const canvas = document.getElementById('qr-code') as HTMLCanvasElement;
-    if (canvas) {
-      const svg = canvas.querySelector('svg');
-      if (svg) {
-        const svgData = new XMLSerializer().serializeToString(svg);
-        const blob = new Blob([svgData], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `vitalock-qr-${user?.id}.svg`;
-        link.click();
-        URL.revokeObjectURL(url);
-        toast.success('QR code downloaded!');
-      }
+  useEffect(() => {
+    if (!pairingStorageKey) {
+      setConnectionCode('');
+      setPairedCode('');
+      return;
     }
+
+    const savedCode = localStorage.getItem(pairingStorageKey) ?? '';
+    setConnectionCode(savedCode);
+    setPairedCode(savedCode);
+  }, [pairingStorageKey]);
+
+  const handlePairBracelet = () => {
+    const normalizedCode = connectionCode.trim().toUpperCase();
+
+    if (!/^[A-Z0-9-]{6,16}$/.test(normalizedCode)) {
+      toast.error('Enter a valid bracelet connection code, for example VTLK-2048.');
+      return;
+    }
+
+    setConnectionCode(normalizedCode);
+    setPairedCode(normalizedCode);
+    if (pairingStorageKey) {
+      localStorage.setItem(pairingStorageKey, normalizedCode);
+    }
+    toast.success('Bracelet paired successfully.');
+  };
+
+  const handleRemovePairing = () => {
+    setConnectionCode('');
+    setPairedCode('');
+    if (pairingStorageKey) {
+      localStorage.removeItem(pairingStorageKey);
+    }
+    toast.success('Bracelet pairing removed.');
   };
 
   const handleSimulateEmergency = () => {
@@ -157,13 +170,14 @@ export function BraceletPage() {
       criticalHighThreshold: parseFloat(sensorData.temperature) + 3,
     },
   ] : [];
+  const isPaired = pairedCode.length > 0;
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Medical Bracelet</h1>
-          <p className="text-gray-600 mt-2">Manage your bracelet settings and QR code</p>
+          <p className="text-gray-600 mt-2">Pair your bracelet and manage live device settings</p>
         </div>
 
         {/* Emergency Simulation Alert */}
@@ -178,34 +192,66 @@ export function BraceletPage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* QR Code Section */}
+          {/* Pairing Section */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Watch className="h-5 w-5" />
-                Bracelet QR Code
+                Pair Your Bracelet
               </CardTitle>
               <CardDescription>
-                Scan this code for instant access to medical information
+                Enter the connection code shown on the bracelet to link it with your profile
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex justify-center p-6 bg-white border-2 border-gray-200 rounded-lg" id="qr-code">
-                <QRCodeSVG
-                  value={qrData}
-                  size={256}
-                  level="H"
-                  includeMargin={true}
-                />
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                <div className="flex items-start gap-3">
+                  <div className={`rounded-full p-3 ${isPaired ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    <Link2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {isPaired ? 'Bracelet paired' : 'Awaiting pairing'}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {isPaired
+                        ? `Connected with code ${pairedCode}.`
+                        : 'Use the code from the bracelet package or device screen.'}
+                    </p>
+                  </div>
+                </div>
               </div>
+
               <div className="space-y-2">
-                <Button onClick={handleDownloadQR} className="w-full" variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download QR Code
-                </Button>
-                <p className="text-xs text-center text-gray-500">
-                  Print this QR code and attach it to your medical bracelet
+                <label htmlFor="connection-code" className="text-sm font-medium text-gray-700">
+                  Connection Code
+                </label>
+                <Input
+                  id="connection-code"
+                  value={connectionCode}
+                  onChange={(event) => setConnectionCode(event.target.value.toUpperCase())}
+                  placeholder="VTLK-2048"
+                  className="bg-white font-medium tracking-[0.2em] uppercase"
+                />
+                <p className="text-xs text-gray-500">
+                  Example format: `VTLK-2048`
                 </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button onClick={handlePairBracelet} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                  <Link2 className="h-4 w-4 mr-2" />
+                  Pair Bracelet
+                </Button>
+                <Button onClick={handleRemovePairing} className="flex-1" variant="outline" disabled={!isPaired && !connectionCode}>
+                  <Unplug className="h-4 w-4 mr-2" />
+                  Clear Code
+                </Button>
+              </div>
+
+              <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-600">
+                Pairing links this device to your medical profile so emergency alerts and live monitoring use the
+                correct account.
               </div>
             </CardContent>
           </Card>
@@ -222,11 +268,22 @@ export function BraceletPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <span className="font-medium text-green-900">Bracelet Status</span>
-                <Badge className="bg-green-600">Online</Badge>
+              <div className={`flex items-center justify-between rounded-lg p-3 ${isPaired ? 'bg-green-50' : 'bg-amber-50'}`}>
+                <span className={`font-medium ${isPaired ? 'text-green-900' : 'text-amber-900'}`}>Bracelet Status</span>
+                <Badge className={isPaired ? 'bg-green-600' : 'bg-amber-500'}>
+                  {isPaired ? 'Paired' : 'Awaiting code'}
+                </Badge>
               </div>
               <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-700">Connection Code</span>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {isPaired ? pairedCode : 'Not paired'}
+                  </span>
+                </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-gray-600" />
@@ -364,29 +421,29 @@ export function BraceletPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4">
-                <div className="bg-blue-100 p-2 rounded-full h-fit">
-                  <span className="font-bold text-blue-600">2</span>
+                <div className="flex gap-4">
+                  <div className="bg-blue-100 p-2 rounded-full h-fit">
+                    <span className="font-bold text-blue-600">2</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Enter the Connection Code</h4>
+                    <p className="text-sm text-gray-600">
+                      Type the unique connection code printed on your bracelet or packaging, then pair the device.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium">Download Your QR Code</h4>
-                  <p className="text-sm text-gray-600">
-                    Click the download button above to save your unique QR code.
-                  </p>
+                <div className="flex gap-4">
+                  <div className="bg-blue-100 p-2 rounded-full h-fit">
+                    <span className="font-bold text-blue-600">3</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Confirm Pairing</h4>
+                    <p className="text-sm text-gray-600">
+                      Once paired, the bracelet will stay linked to your profile on this device until you clear it.
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="bg-blue-100 p-2 rounded-full h-fit">
-                  <span className="font-bold text-blue-600">3</span>
-                </div>
-                <div>
-                  <h4 className="font-medium">Attach to Bracelet</h4>
-                  <p className="text-sm text-gray-600">
-                    Print the QR code and securely attach it to your medical bracelet using the provided waterproof sleeve.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-4">
+                <div className="flex gap-4">
                 <div className="bg-blue-100 p-2 rounded-full h-fit">
                   <span className="font-bold text-blue-600">4</span>
                 </div>
@@ -405,7 +462,7 @@ export function BraceletPage() {
         <Card>
           <CardHeader>
             <CardTitle>Your Medical Profile Summary</CardTitle>
-            <CardDescription>Information accessible via QR code scan</CardDescription>
+            <CardDescription>Readiness summary for your paired bracelet and emergency profile</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
@@ -420,10 +477,10 @@ export function BraceletPage() {
             </div>
             <div className="pt-3 border-t">
               <p className="text-sm text-gray-600">
-                ✓ Your information is encrypted and only accessible via the QR code
+                ✓ Your bracelet links to this profile through a unique connection code
               </p>
               <p className="text-sm text-gray-600">
-                ✓ First responders can access critical information in seconds
+                ✓ Pairing keeps your emergency profile connected to the right device
               </p>
               <p className="text-sm text-gray-600">
                 ✓ Automatic emergency detection and notification system active

@@ -119,8 +119,8 @@ export function DashboardPage() {
             >
               <Watch className="h-5 w-5 mr-3" />
               <div className="text-left">
-                <div className="font-medium">View Bracelet QR Code</div>
-                <div className="text-sm text-gray-500">Generate QR code for your device</div>
+                <div className="font-medium">Pair Bracelet</div>
+                <div className="text-sm text-gray-500">Enter the bracelet connection code</div>
               </div>
             </Button>
             <Button
@@ -162,7 +162,7 @@ export function DashboardPage() {
               <div>
                 <h4 className="font-medium">Link Your Bracelet</h4>
                 <p className="text-sm text-gray-600">
-                  Generate a QR code that connects to your profile. First responders can scan it for instant access.
+                  Enter the bracelet connection code to link the device with your secure profile.
                 </p>
               </div>
             </div>

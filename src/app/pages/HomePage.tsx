@@ -35,9 +35,6 @@ export function HomePage() {
               <button onClick={() => scrollToSection('features')} className="text-gray-700 hover:text-teal-600 transition-colors">
                 Features
               </button>
-              <button onClick={() => scrollToSection('about')} className="text-gray-700 hover:text-teal-600 transition-colors">
-                About
-              </button>
               <Link to="/login" className="text-gray-700 hover:text-teal-600 transition-colors">
                 Sign in
               </Link>
@@ -63,9 +60,6 @@ export function HomePage() {
               </button>
               <button onClick={() => scrollToSection('features')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50">
                 Features
-              </button>
-              <button onClick={() => scrollToSection('about')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50">
-                About
               </button>
               <Link to="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-50" onClick={() => setMobileMenuOpen(false)}>
                 Sign in
@@ -146,16 +140,6 @@ export function HomePage() {
                   className="w-full h-full object-cover"
                 />
               </div>
-              {/* Floating Badge */}
-              <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-xl shadow-xl flex items-center gap-3">
-                <div className="bg-teal-100 p-3 rounded-full">
-                  <CheckCircle className="h-6 w-6 text-teal-600" />
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600">Trusted by</div>
-                  <div className="text-xl font-bold text-gray-900">10,000+ users</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -164,18 +148,10 @@ export function HomePage() {
       {/* Trust Banner */}
       <section className="py-8 bg-teal-50 border-y border-teal-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-around items-center gap-8 text-center">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-teal-600" />
-              <span className="text-gray-700 font-medium">FDA Approved Technology</span>
-            </div>
+          <div className="flex flex-wrap justify-center items-center gap-8 text-center">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-teal-600" />
               <span className="text-gray-700 font-medium">24/7 Emergency Monitoring</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-teal-600" />
-              <span className="text-gray-700 font-medium">HIPAA Compliant</span>
             </div>
           </div>
         </div>
@@ -208,7 +184,7 @@ export function HomePage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Wear Your Bracelet</h3>
               <p className="text-gray-600">
-                Receive your smart medical bracelet with QR code. The bracelet monitors your vitals 24/7 and detects emergencies.
+                Enter the connection code from your bracelet to pair it with your profile. Once linked, it starts syncing to the system.
               </p>
             </div>
 
@@ -218,7 +194,7 @@ export function HomePage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Stay Protected</h3>
               <p className="text-gray-600">
-                In an emergency, first responders scan your QR code for instant access to your medical info. Contacts are alerted automatically.
+                If the bracelet detects an emergency, the system can surface your medical profile and notify your emergency contacts.
               </p>
             </div>
           </div>
@@ -272,85 +248,9 @@ export function HomePage() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Instant Access</h3>
               <p className="text-gray-600">
-                QR code provides immediate access to medical records for first responders
+                Pairing code links your bracelet to the right medical profile in seconds
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="relative rounded-2xl overflow-hidden shadow-xl">
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1687757660310-6077c761f034?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwYnJhY2VsZXQlMjBoZWFsdGglMjBlbWVyZ2VuY3l8ZW58MXx8fHwxNzczODY2MjAyfDA&ixlib=rb-4.1.0&q=80&w=1080"
-                alt="Medical bracelet technology"
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            <div className="space-y-6">
-              <h2 className="text-4xl font-bold text-gray-900">
-                Your Health Information, Always Within Reach
-              </h2>
-              <p className="text-lg text-gray-600">
-                VitaLock was created by healthcare professionals and tech innovators who understand that 
-                seconds matter in medical emergencies. Our mission is to bridge the gap between patients 
-                and first responders with instant, accurate medical information.
-              </p>
-              <p className="text-lg text-gray-600">
-                Whether you have allergies, chronic conditions, or simply want peace of mind, VitaLock 
-                ensures your vital information is accessible when you need it most.
-              </p>
-              <div className="grid grid-cols-2 gap-6 pt-4">
-                <div>
-                  <div className="text-3xl font-bold text-teal-600 mb-1">10,000+</div>
-                  <div className="text-gray-600">Active Users</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-teal-600 mb-1">500+</div>
-                  <div className="text-gray-600">Lives Saved</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-teal-600 mb-1">24/7</div>
-                  <div className="text-gray-600">Monitoring</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-teal-600 mb-1">99.9%</div>
-                  <div className="text-gray-600">Uptime</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-teal-600">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Ready to Protect Your Health?
-          </h2>
-          <p className="text-xl text-teal-50 mb-8">
-            Join thousands of users who trust VitaLock to keep them safe. Get started today with a free 30-day trial.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild className="bg-white text-teal-600 hover:bg-gray-100 text-lg px-8 py-6 w-full sm:w-auto">
-              <Link to="/signup">
-                Start Free Trial
-              </Link>
-            </Button>
-            <Button 
-              asChild
-                variant="outline" 
-                className="text-lg px-8 py-6 w-full sm:w-auto border-white text-white hover:bg-teal-700"
-              >
-              <Link to="/login">
-                Sign In
-              </Link>
-            </Button>
           </div>
         </div>
       </section>
@@ -379,7 +279,6 @@ export function HomePage() {
             <div>
               <h4 className="font-bold text-white mb-3">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><button onClick={() => scrollToSection('about')} className="hover:text-teal-500">About</button></li>
                 <li><a href="#" className="hover:text-teal-500">Contact</a></li>
                 <li><a href="#" className="hover:text-teal-500">Privacy</a></li>
               </ul>
