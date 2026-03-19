@@ -35,11 +35,8 @@ export function HomePage() {
               <button onClick={() => scrollToSection('features')} className="text-gray-700 hover:text-teal-600 transition-colors">
                 Features
               </button>
-              <Link to="/login" className="text-gray-700 hover:text-teal-600 transition-colors">
-                Sign in
-              </Link>
               <Button asChild className="bg-teal-600 hover:bg-teal-700">
-                <Link to="/signup">Sign up</Link>
+                <Link to="/login">Sign In</Link>
               </Button>
             </div>
 
@@ -61,13 +58,10 @@ export function HomePage() {
               <button onClick={() => scrollToSection('features')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50">
                 Features
               </button>
-              <Link to="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-50" onClick={() => setMobileMenuOpen(false)}>
-                Sign in
-              </Link>
               <div className="block px-4">
                 <Button asChild className="w-full bg-teal-600 hover:bg-teal-700">
-                  <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                    Sign up
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                    Sign In
                   </Link>
                 </Button>
               </div>

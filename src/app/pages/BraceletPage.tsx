@@ -533,11 +533,11 @@ export function BraceletPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-4">
-              <div className="flex gap-4">
-                <div className="bg-blue-100 p-2 rounded-full h-fit">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
                   <span className="font-bold text-blue-600">1</span>
                 </div>
-                <div>
+                <div className="pt-1">
                   <h4 className="font-medium">Set Your Average Values</h4>
                   <p className="text-sm text-gray-600">
                     Go to Medical Records and enter your normal heart rate, oxygen, temperature, breathing, and blood
@@ -545,33 +545,33 @@ export function BraceletPage() {
                   </p>
                 </div>
               </div>
-                <div className="flex gap-4">
-                  <div className="bg-blue-100 p-2 rounded-full h-fit">
-                    <span className="font-bold text-blue-600">2</span>
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Enter the Connection Code</h4>
-                    <p className="text-sm text-gray-600">
-                      Type the unique connection code printed on your bracelet or packaging, then pair the device.
-                    </p>
-                  </div>
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
+                  <span className="font-bold text-blue-600">2</span>
                 </div>
-                <div className="flex gap-4">
-                  <div className="bg-blue-100 p-2 rounded-full h-fit">
-                    <span className="font-bold text-blue-600">3</span>
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Confirm Pairing</h4>
-                    <p className="text-sm text-gray-600">
-                      Once paired, the bracelet will stay linked to your profile on this device until you clear it.
-                    </p>
-                  </div>
+                <div className="pt-1">
+                  <h4 className="font-medium">Enter the Connection Code</h4>
+                  <p className="text-sm text-gray-600">
+                    Type the unique connection code printed on your bracelet or packaging, then pair the device.
+                  </p>
                 </div>
-                <div className="flex gap-4">
-                <div className="bg-blue-100 p-2 rounded-full h-fit">
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
+                  <span className="font-bold text-blue-600">3</span>
+                </div>
+                <div className="pt-1">
+                  <h4 className="font-medium">Confirm Pairing</h4>
+                  <p className="text-sm text-gray-600">
+                    Once paired, the bracelet will stay linked to your profile on this device until you clear it.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
                   <span className="font-bold text-blue-600">4</span>
                 </div>
-                <div>
+                <div className="pt-1">
                   <h4 className="font-medium">Wear and Monitor</h4>
                   <p className="text-sm text-gray-600">
                     The bracelet continuously monitors your vitals. If readings deviate significantly, the demo alert flow can notify your saved contacts.
