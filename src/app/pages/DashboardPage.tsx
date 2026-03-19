@@ -126,12 +126,12 @@ export function DashboardPage() {
             <Button
               variant="outline"
               className="h-auto py-4 justify-start"
-              onClick={() => {}}
+              onClick={() => navigate('/dashboard/bracelet')}
             >
               <Activity className="h-5 w-5 mr-3" />
               <div className="text-left">
                 <div className="font-medium">Health Metrics</div>
-                <div className="text-sm text-gray-500">View sensor data (demo)</div>
+                <div className="text-sm text-gray-500">Open live bracelet readings</div>
               </div>
             </Button>
           </CardContent>

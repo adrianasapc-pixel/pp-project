@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -35,6 +35,20 @@ export function MedicalRecordsPage() {
     fallDetection: 'Active',
     gpsLocation: 'Enabled',
   });
+
+  useEffect(() => {
+    if (!sensorData.lastUpdated && !sensorData.heartRate && !sensorData.bloodOxygen && !sensorData.temperature) {
+      return;
+    }
+
+    setSensorFormData({
+      heartRate: sensorData.heartRate,
+      bloodOxygen: sensorData.bloodOxygen,
+      temperature: sensorData.temperature,
+      fallDetection: sensorData.fallDetection || 'Active',
+      gpsLocation: sensorData.gpsLocation || 'Enabled',
+    });
+  }, [sensorData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,13 +134,6 @@ export function MedicalRecordsPage() {
     });
 
     toast.success('Sensor data updated! Check the Bracelet page to see the changes.');
-    setSensorFormData({
-      heartRate: '',
-      bloodOxygen: '',
-      temperature: '',
-      fallDetection: 'Active',
-      gpsLocation: 'Enabled',
-    });
   };
 
   const getRecordIcon = (type: string) => {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -12,6 +13,7 @@ import { SensorReadingBar } from '../components/SensorReadingBar';
 
 export function BraceletPage() {
   const { user, medicalRecords, emergencyContacts, sensorData } = useAuth();
+  const navigate = useNavigate();
   const [simulateEmergency, setSimulateEmergency] = useState(false);
   const [simulatedReadings, setSimulatedReadings] = useState({
     heartRate: 0,
@@ -301,7 +303,7 @@ export function BraceletPage() {
                 To see live sensor readings and enable automatic emergency detection, please set your average health
                 values in the Medical Records page.
               </p>
-              <Button onClick={() => window.location.href = '/dashboard/medical-records'} className="bg-yellow-600 hover:bg-yellow-700">
+              <Button onClick={() => navigate('/dashboard/medical-records')} className="bg-yellow-600 hover:bg-yellow-700">
                 Go to Medical Records
               </Button>
             </CardContent>

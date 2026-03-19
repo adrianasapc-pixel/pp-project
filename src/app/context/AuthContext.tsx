@@ -1,9 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface User {
   id: string;
   email: string;
   name: string;
+}
+
+interface StoredUser extends User {
+  password: string;
 }
 
 interface MedicalRecord {
@@ -35,6 +39,7 @@ interface SensorData {
 
 interface AuthContextType {
   user: User | null;
+  isHydrated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
@@ -51,66 +56,114 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const STORAGE_KEYS = {
+  currentUser: 'medBracelet_user',
+  users: 'medBracelet_users',
+} as const;
+
+const EMPTY_SENSOR_DATA: SensorData = {
+  heartRate: '',
+  bloodOxygen: '',
+  temperature: '',
+  fallDetection: '',
+  gpsLocation: '',
+  lastUpdated: '',
+};
+
+export const DEMO_CREDENTIALS = {
+  email: 'demo@vitalock.app',
+  password: 'demo12345',
+} as const;
+
+const DEMO_USER: StoredUser = {
+  id: 'demo-user',
+  name: 'Demo User',
+  email: DEMO_CREDENTIALS.email,
+  password: DEMO_CREDENTIALS.password,
+};
+
+function readStorage<T>(key: string, fallback: T): T {
+  try {
+    const rawValue = localStorage.getItem(key);
+    return rawValue ? (JSON.parse(rawValue) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStorage<T>(key: string, value: T) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function getUserStorageKey(userId: string, key: 'records' | 'contacts' | 'sensorData') {
+  return `medBracelet_${key}_${userId}`;
+}
+
+function ensureSeededUsers() {
+  const storedUsers = readStorage<StoredUser[]>(STORAGE_KEYS.users, []);
+  if (storedUsers.some((user) => user.email === DEMO_USER.email)) {
+    return storedUsers;
+  }
+
+  const seededUsers = [...storedUsers, DEMO_USER];
+  writeStorage(STORAGE_KEYS.users, seededUsers);
+  return seededUsers;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
-  const [sensorData, setSensorData] = useState<SensorData>({
-    heartRate: '',
-    bloodOxygen: '',
-    temperature: '',
-    fallDetection: '',
-    gpsLocation: '',
-    lastUpdated: '',
-  });
+  const [sensorData, setSensorData] = useState<SensorData>(EMPTY_SENSOR_DATA);
 
-  // Load data from localStorage on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('medBracelet_user');
-    const savedRecords = localStorage.getItem('medBracelet_records');
-    const savedContacts = localStorage.getItem('medBracelet_contacts');
-    const savedSensorData = localStorage.getItem('medBracelet_sensorData');
-
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    if (savedRecords) {
-      setMedicalRecords(JSON.parse(savedRecords));
-    }
-    if (savedContacts) {
-      setEmergencyContacts(JSON.parse(savedContacts));
-    }
-    if (savedSensorData) {
-      setSensorData(JSON.parse(savedSensorData));
-    }
+    ensureSeededUsers();
+    const savedUser = readStorage<User | null>(STORAGE_KEYS.currentUser, null);
+    setUser(savedUser);
+    setIsHydrated(true);
   }, []);
 
-  // Save data to localStorage whenever it changes
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('medBracelet_user', JSON.stringify(user));
+    if (!isHydrated) {
+      return;
     }
-  }, [user]);
+
+    if (!user) {
+      setMedicalRecords([]);
+      setEmergencyContacts([]);
+      setSensorData(EMPTY_SENSOR_DATA);
+      setLoadedUserId(null);
+      return;
+    }
+
+    setMedicalRecords(readStorage(getUserStorageKey(user.id, 'records'), []));
+    setEmergencyContacts(readStorage(getUserStorageKey(user.id, 'contacts'), []));
+    setSensorData(readStorage(getUserStorageKey(user.id, 'sensorData'), EMPTY_SENSOR_DATA));
+    setLoadedUserId(user.id);
+  }, [user, isHydrated]);
 
   useEffect(() => {
-    localStorage.setItem('medBracelet_records', JSON.stringify(medicalRecords));
-  }, [medicalRecords]);
+    if (!isHydrated) {
+      return;
+    }
 
-  useEffect(() => {
-    localStorage.setItem('medBracelet_contacts', JSON.stringify(emergencyContacts));
-  }, [emergencyContacts]);
+    if (user) {
+      writeStorage(STORAGE_KEYS.currentUser, user);
+      return;
+    }
 
-  useEffect(() => {
-    localStorage.setItem('medBracelet_sensorData', JSON.stringify(sensorData));
-  }, [sensorData]);
+    localStorage.removeItem(STORAGE_KEYS.currentUser);
+  }, [user, isHydrated]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API call
-    const savedUsers = localStorage.getItem('medBracelet_users');
-    const users = savedUsers ? JSON.parse(savedUsers) : [];
-    
-    const foundUser = users.find((u: any) => u.email === email && u.password === password);
-    
+    const normalizedEmail = email.trim().toLowerCase();
+    const users = ensureSeededUsers();
+    const foundUser = users.find(
+      (storedUser) => storedUser.email.toLowerCase() === normalizedEmail && storedUser.password === password,
+    );
+
     if (foundUser) {
       setUser({ id: foundUser.id, email: foundUser.email, name: foundUser.name });
       return true;
@@ -119,25 +172,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signup = async (email: string, password: string, name: string): Promise<boolean> => {
-    // Simulate API call
-    const savedUsers = localStorage.getItem('medBracelet_users');
-    const users = savedUsers ? JSON.parse(savedUsers) : [];
-    
-    // Check if user already exists
-    if (users.find((u: any) => u.email === email)) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const users = ensureSeededUsers();
+
+    if (users.find((storedUser) => storedUser.email.toLowerCase() === normalizedEmail)) {
       return false;
     }
 
-    const newUser = {
+    const newUser: StoredUser = {
       id: Date.now().toString(),
-      email,
+      email: normalizedEmail,
       password,
-      name,
+      name: name.trim(),
     };
 
     users.push(newUser);
-    localStorage.setItem('medBracelet_users', JSON.stringify(users));
-    
+    writeStorage(STORAGE_KEYS.users, users);
     setUser({ id: newUser.id, email: newUser.email, name: newUser.name });
     return true;
   };
@@ -146,18 +196,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setMedicalRecords([]);
     setEmergencyContacts([]);
-    setSensorData({
-      heartRate: '',
-      bloodOxygen: '',
-      temperature: '',
-      fallDetection: '',
-      gpsLocation: '',
-      lastUpdated: '',
-    });
-    localStorage.removeItem('medBracelet_user');
-    localStorage.removeItem('medBracelet_records');
-    localStorage.removeItem('medBracelet_contacts');
-    localStorage.removeItem('medBracelet_sensorData');
+    setSensorData(EMPTY_SENSOR_DATA);
+    localStorage.removeItem(STORAGE_KEYS.currentUser);
   };
 
   const addMedicalRecord = (record: Omit<MedicalRecord, 'id'>) => {
@@ -165,11 +205,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ...record,
       id: Date.now().toString(),
     };
-    setMedicalRecords([...medicalRecords, newRecord]);
+    setMedicalRecords((currentRecords) => [...currentRecords, newRecord]);
   };
 
   const deleteMedicalRecord = (id: string) => {
-    setMedicalRecords(medicalRecords.filter(r => r.id !== id));
+    setMedicalRecords((currentRecords) => currentRecords.filter((record) => record.id !== id));
   };
 
   const addEmergencyContact = (contact: Omit<EmergencyContact, 'id'>) => {
@@ -177,41 +217,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ...contact,
       id: Date.now().toString(),
     };
-    setEmergencyContacts([...emergencyContacts, newContact]);
+    setEmergencyContacts((currentContacts) => {
+      if (!newContact.isPrimary) {
+        return [...currentContacts, newContact];
+      }
+
+      return [...currentContacts.map((existingContact) => ({ ...existingContact, isPrimary: false })), newContact];
+    });
   };
 
   const deleteEmergencyContact = (id: string) => {
-    setEmergencyContacts(emergencyContacts.filter(c => c.id !== id));
+    setEmergencyContacts((currentContacts) => currentContacts.filter((contact) => contact.id !== id));
   };
 
   const updateEmergencyContact = (id: string, updatedContact: Partial<EmergencyContact>) => {
-    setEmergencyContacts(emergencyContacts.map(c => 
-      c.id === id ? { ...c, ...updatedContact } : c
-    ));
+    setEmergencyContacts((currentContacts) => {
+      const nextContacts = updatedContact.isPrimary
+        ? currentContacts.map((contact) => ({ ...contact, isPrimary: false }))
+        : currentContacts;
+
+      return nextContacts.map((contact) => (contact.id === id ? { ...contact, ...updatedContact } : contact));
+    });
   };
 
   const updateSensorData = (data: Partial<SensorData>) => {
-    setSensorData({ ...sensorData, ...data });
+    setSensorData((currentSensorData) => ({ ...currentSensorData, ...data }));
+  };
+
+  useEffect(() => {
+    if (!user || !isHydrated || loadedUserId !== user.id) {
+      return;
+    }
+
+    writeStorage(getUserStorageKey(user.id, 'records'), medicalRecords);
+  }, [medicalRecords, user, isHydrated, loadedUserId]);
+
+  useEffect(() => {
+    if (!user || !isHydrated || loadedUserId !== user.id) {
+      return;
+    }
+
+    writeStorage(getUserStorageKey(user.id, 'contacts'), emergencyContacts);
+  }, [emergencyContacts, user, isHydrated, loadedUserId]);
+
+  useEffect(() => {
+    if (!user || !isHydrated || loadedUserId !== user.id) {
+      return;
+    }
+
+    writeStorage(getUserStorageKey(user.id, 'sensorData'), sensorData);
+  }, [sensorData, user, isHydrated, loadedUserId]);
+
+  const contextValue: AuthContextType = {
+    user,
+    isHydrated,
+    login,
+    signup,
+    logout,
+    medicalRecords,
+    addMedicalRecord,
+    deleteMedicalRecord,
+    emergencyContacts,
+    addEmergencyContact,
+    deleteEmergencyContact,
+    updateEmergencyContact,
+    sensorData,
+    updateSensorData,
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        login,
-        signup,
-        logout,
-        medicalRecords,
-        addMedicalRecord,
-        deleteMedicalRecord,
-        emergencyContacts,
-        addEmergencyContact,
-        deleteEmergencyContact,
-        updateEmergencyContact,
-        sensorData,
-        updateSensorData,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

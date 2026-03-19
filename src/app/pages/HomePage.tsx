@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { Button } from '../components/ui/button';
 import { Shield, Heart, Phone, Clock, CheckCircle, Menu, X } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
@@ -37,12 +38,12 @@ export function HomePage() {
               <button onClick={() => scrollToSection('about')} className="text-gray-700 hover:text-teal-600 transition-colors">
                 About
               </button>
-              <a href="/login" className="text-gray-700 hover:text-teal-600 transition-colors">
+              <Link to="/login" className="text-gray-700 hover:text-teal-600 transition-colors">
                 Sign in
-              </a>
-              <a href="/signup">
-                <Button className="bg-teal-600 hover:bg-teal-700">Sign up</Button>
-              </a>
+              </Link>
+              <Button asChild className="bg-teal-600 hover:bg-teal-700">
+                <Link to="/signup">Sign up</Link>
+              </Button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -66,12 +67,16 @@ export function HomePage() {
               <button onClick={() => scrollToSection('about')} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50">
                 About
               </button>
-              <a href="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-50">
+              <Link to="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-50" onClick={() => setMobileMenuOpen(false)}>
                 Sign in
-              </a>
-              <a href="/signup" className="block px-4">
-                <Button className="w-full bg-teal-600 hover:bg-teal-700">Sign up</Button>
-              </a>
+              </Link>
+              <div className="block px-4">
+                <Button asChild className="w-full bg-teal-600 hover:bg-teal-700">
+                  <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                    Sign up
+                  </Link>
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -95,11 +100,11 @@ export function HomePage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <a href="/signup">
-                  <Button className="bg-teal-600 hover:bg-teal-700 text-lg px-8 py-6 w-full sm:w-auto">
+                <Button asChild className="bg-teal-600 hover:bg-teal-700 text-lg px-8 py-6 w-full sm:w-auto">
+                  <Link to="/signup">
                     Get Started
-                  </Button>
-                </a>
+                  </Link>
+                </Button>
                 <Button 
                   variant="outline" 
                   className="text-lg px-8 py-6 w-full sm:w-auto border-teal-600 text-teal-600 hover:bg-teal-50"
@@ -332,19 +337,20 @@ export function HomePage() {
             Join thousands of users who trust VitaLock to keep them safe. Get started today with a free 30-day trial.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/signup">
-              <Button className="bg-white text-teal-600 hover:bg-gray-100 text-lg px-8 py-6 w-full sm:w-auto">
+            <Button asChild className="bg-white text-teal-600 hover:bg-gray-100 text-lg px-8 py-6 w-full sm:w-auto">
+              <Link to="/signup">
                 Start Free Trial
-              </Button>
-            </a>
-            <a href="/login">
-              <Button 
+              </Link>
+            </Button>
+            <Button 
+              asChild
                 variant="outline" 
                 className="text-lg px-8 py-6 w-full sm:w-auto border-white text-white hover:bg-teal-700"
               >
+              <Link to="/login">
                 Sign In
-              </Button>
-            </a>
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

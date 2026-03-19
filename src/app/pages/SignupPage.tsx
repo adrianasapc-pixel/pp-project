@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -17,7 +17,7 @@ export function SignupPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { signup, user, isHydrated } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +54,26 @@ export function SignupPage() {
     }
   };
 
+  if (!isHydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50 px-4">
+        <div className="rounded-2xl border border-white/70 bg-white/90 px-6 py-5 text-center shadow-sm">
+          <p className="text-sm font-medium text-slate-900">Preparing account setup...</p>
+          <p className="mt-1 text-sm text-slate-500">Loading your secure workspace.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="mb-8 flex items-center justify-center gap-3">
             <div className="bg-gradient-to-br from-teal-500 to-teal-700 p-3 rounded-xl">
               <Heart className="h-8 w-8 text-white" />
             </div>
@@ -137,6 +152,10 @@ export function SignupPage() {
                 </label>
               </div>
 
+              <p className="text-xs text-gray-500">
+                Prototype note: your account is stored in this browser so you can test the experience on Vercel.
+              </p>
+
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
                 {isLoading ? 'Creating account...' : 'Create Account'}
               </Button>
@@ -145,7 +164,7 @@ export function SignupPage() {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
-                <Link to="/" className="text-blue-600 hover:underline">
+                <Link to="/login" className="text-blue-600 hover:underline">
                   Sign in
                 </Link>
               </p>
