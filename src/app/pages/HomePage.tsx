@@ -108,25 +108,6 @@ export function HomePage() {
                 </Button>
               </div>
 
-              {/* Demo Access Cards */}
-              <div className="flex flex-wrap gap-4 pt-4">
-                <Button asChild variant="outline" className="h-auto border-teal-200 bg-white px-4 py-3 text-left hover:bg-teal-50">
-                  <Link to="/login">
-                    <div>
-                      <div className="text-xs uppercase tracking-[0.18em] text-gray-500">Fast Access</div>
-                      <div className="text-sm font-semibold text-gray-900">Use Demo Login</div>
-                    </div>
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="h-auto border-teal-200 bg-white px-4 py-3 text-left hover:bg-teal-50">
-                  <Link to="/pricing">
-                    <div>
-                      <div className="text-xs uppercase tracking-[0.18em] text-gray-500">Before You Start</div>
-                      <div className="text-sm font-semibold text-gray-900">View Demo Plans</div>
-                    </div>
-                  </Link>
-                </Button>
-              </div>
             </div>
 
             {/* Right Image */}
@@ -149,7 +130,7 @@ export function HomePage() {
           <div className="flex flex-wrap justify-center items-center gap-8 text-center">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-teal-600" />
-              <span className="text-gray-700 font-medium">Continuous Bracelet Monitoring Demo</span>
+              <span className="text-gray-700 font-medium">24/7 Bracelet Monitoring</span>
             </div>
           </div>
         </div>
